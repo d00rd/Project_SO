@@ -19,15 +19,26 @@ typedef struct{
     int value;
 }Treasure;
 
-void create_symlink(char* path,char* hunt_id){
+void create_symlink(char* path, char* hunt_id) {
     char link[256];
-    sprintf(link,"./logs/logged_hunt-%s.log",hunt_id);
-    mkdir("./logs",0755);
-    unlink(link);
-    symlink(path,link);
+    char real_path[512];
+
+    mkdir("./logs", 0755);
+    sprintf(link, "./logs/logged_hunt-%s.log", hunt_id);
+    
+    if (realpath(path, real_path) == NULL) {
+        printf("Failed to resolve real path for symlink");
+        return;
+    }
+
+    unlink(link);  
+    if (symlink(real_path, link) == -1) {
+        printf("Failed to create symlink");
+    }
 }
 
 void add_log(char* path,char* action,int size){
+    mkdir("./log",0755);
     int fd=open(path,O_WRONLY | O_CREAT | O_APPEND,0644);
     if(fd==-1){
         printf("failed to open log %s\n",path);
@@ -66,6 +77,8 @@ void add_treasure(char* hunt_id){
     t.treasure_id=current_entries+1;
 
     lseek(fd,0,SEEK_END);
+
+    printf("The indexing of the treasures is done automatically and starts from 1\n");
     
     printf("User name: ");
     scanf("%255s", t.user_name);
@@ -91,6 +104,7 @@ void add_treasure(char* hunt_id){
     sprintf(action,"treasure %d was created",t.treasure_id);
     add_log(log_path,action,strlen(action));
     create_symlink(log_path,hunt_id);
+    add_log("./log/general.log",action,strlen(action));
 }
 
 void list(char* hunt_id){
@@ -117,6 +131,7 @@ void list(char* hunt_id){
     close(fd);
     char* message="Listed treasures";
     add_log(path_to_log,message,strlen(message));
+    add_log("./log/general.log",message,strlen(message));
 }
 
 void view(char* hunt_id,int treasure){
@@ -172,6 +187,10 @@ void remove_hunt(char* hunt_id){
         printf("could not remove directory");
         return;
     }
+
+    char action[256];
+    sprintf(action,"removed %s",hunt_id);
+    add_log("./log/general.log",action,strlen(action));
 }
 
 void remove_treasure(char* hunt_id,int position){
@@ -237,6 +256,7 @@ void remove_treasure(char* hunt_id,int position){
     char action[256];
     sprintf(action, "Removed treasure %d", position);
     add_log(log_file, action, strlen(action));
+    add_log("./log/general.log",action,strlen(action));
     
 }
 
