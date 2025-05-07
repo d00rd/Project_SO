@@ -187,7 +187,7 @@ void remove_hunt(char* hunt_id){
         printf("could not remove directory");
         return;
     }
-
+    
     char action[256];
     sprintf(action,"removed %s",hunt_id);
     add_log("./log/general.log",action,strlen(action));
